@@ -1,0 +1,16 @@
+html,
+body {
+  min-height: 100vh; /* Đảm bảo trang luôn đủ cao */
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1; /* Nội dung chính chiếm toàn bộ không gian còn lại */
+}

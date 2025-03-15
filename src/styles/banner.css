@@ -1,0 +1,30 @@
+/* Ẩn nút mặc định */
+.slick-prev,
+.slick-next {
+  display: none !important; /* Ẩn nút nhỏ mặc định */
+}
+
+/* Tạo nút điều hướng lớn hơn */
+.custom-carousel .custom-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 50px !important; /* Kích thước lớn hơn */
+  color: white;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* Căn chỉnh vị trí */
+.custom-carousel .custom-prev {
+  left: 20px;
+}
+
+.custom-carousel .custom-next {
+  right: 20px;
+}
+
+/* Hover để đổi màu */
+.custom-carousel .custom-arrow:hover {
+  color: #ffd700;
+}
