@@ -1,77 +1,170 @@
+// src/pages/ProfilePage.js
 import React, { useEffect, useState } from "react";
-import { Form, Input, Button, message } from "antd";
-import authApi from "../../api/authApi";
+import { Form, Input, Button, message, Card, Spin } from "antd";
 import { useAuth } from "../../context/AuContext";
+import userApi from "../../api/userApi";
+import { useNavigate } from "react-router-dom";
 
-const UserProfilePage = () => {
-  const { user, fetchUser } = useAuth();
+const ProfilePage = () => {
+  const { user, setUser } = useAuth();
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      form.setFieldsValue({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      });
-    }
-  }, [user, form]);
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const response = await userApi.getProfile();
+        const profileData = response.data || {};
+        console.log("Profile data from API:", profileData);
+        setUser(profileData);
+        form.setFieldsValue({
+          name: profileData.name || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+          address: profileData.address || "",
+        });
+        message.success("Tải hồ sơ thành công!");
+      } catch (error) {
+        console.error("Fetch profile error:", error.response?.data || error);
+        if (error.response?.status === 401) {
+          message.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+          navigate("/login");
+        } else if (error.response?.status === 404) {
+          message.error("Không tìm thấy thông tin hồ sơ!");
+        } else {
+          message.error(`Không thể tải thông tin hồ sơ: ${error.message}`);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [form, setUser, navigate]);
 
-  const handleUpdateProfile = async (values) => {
+  const onFinish = async (values) => {
     setLoading(true);
     try {
-      await authApi.updateProfile(values);
-      message.success("Cập nhật thông tin thành công!");
-      fetchUser();
+      const response = await userApi.updateProfile(values);
+      setUser(response.data);
+      message.success("Cập nhật hồ sơ thành công!");
+      setEditMode(false);
     } catch (error) {
-      message.error("Cập nhật thông tin thất bại!");
+      console.error("Update profile error:", error.response?.data || error);
+      if (error.response?.status === 404) {
+        message.error("Không tìm thấy người dùng để cập nhật!");
+      } else if (error.response?.status === 401) {
+        message.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+        navigate("/login");
+      } else {
+        message.error("Cập nhật hồ sơ thất bại!");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">Thông Tin Cá Nhân</h1>
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleUpdateProfile}
-        initialValues={{
-          name: user?.name,
-          email: user?.email,
-          phone: user?.phone,
-        }}
-      >
-        <Form.Item
-          name="name"
-          label="Tên"
-          rules={[{ required: true, message: "Vui lòng nhập tên của bạn" }]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item
-          name="email"
-          label="Email"
-          rules={[{ required: true, message: "Vui lòng nhập email của bạn" }]}
-        >
-          <Input disabled />
-        </Form.Item>
-        <Form.Item
-          name="phone"
-          label="Số điện thoại"
-          rules={[
-            { required: true, message: "Vui lòng nhập số điện thoại của bạn" },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Cập Nhật
-          </Button>
-        </Form.Item>
-      </Form>
+    <div className="max-w-4xl mx-auto p-5">
+      <h1 className="text-center text-3xl font-bold mb-8">Hồ Sơ Người Dùng</h1>
+      {loading ? (
+        <div className="text-center">
+          <Spin tip="Đang tải..." />
+        </div>
+      ) : (
+        <Card className="shadow-md">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={{
+              name: user?.name || "",
+              email: user?.email || "",
+              phone: user?.phone || "",
+              address: user?.address || "",
+            }}
+          >
+            <Form.Item
+              label="Họ và Tên"
+              name="name"
+              rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
+            >
+              <Input
+                placeholder="Nhập họ và tên"
+                disabled={!editMode}
+                className="w-full"
+              />
+            </Form.Item>
+
+            <Form.Item label="Email" name="email">
+              <Input placeholder="Nhập email" disabled className="w-full" />
+            </Form.Item>
+
+            <Form.Item
+              label="Số điện thoại"
+              name="phone"
+              rules={[
+                { required: true, message: "Vui lòng nhập số điện thoại!" },
+                {
+                  pattern: /^[0-9]{10}$/,
+                  message: "Số điện thoại phải là 10 chữ số!",
+                },
+              ]}
+            >
+              <Input
+                placeholder="Nhập số điện thoại"
+                disabled={!editMode}
+                className="w-full"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Địa chỉ"
+              name="address"
+              rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
+            >
+              <Input
+                placeholder="Nhập địa chỉ"
+                disabled={!editMode}
+                className="w-full"
+              />
+            </Form.Item>
+
+            <div className="flex justify-end gap-4">
+              {editMode ? (
+                <>
+                  <Button
+                    onClick={() => setEditMode(false)}
+                    className="bg-gray-500 text-white"
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    className="bg-blue-600"
+                  >
+                    Lưu
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="primary"
+                  onClick={() => setEditMode(true)}
+                  className="bg-blue-600"
+                >
+                  Chỉnh sửa
+                </Button>
+              )}
+            </div>
+          </Form>
+        </Card>
+      )}
     </div>
   );
 };
 
-export default UserProfilePage;
+export default ProfilePage;

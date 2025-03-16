@@ -1,30 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Form, Input, Button, message, Radio, Divider, List } from "antd";
-import { selectTotalPrice, selectCartItems } from "../../redux/slice/cartSlice"; // Import selectors từ cartSlice
+import { selectTotalPrice, selectCartItems } from "../../redux/slice/cartSlice";
 import { useAuth } from "../../context/AuContext";
 import axiosClient from "../../api/axiosClient";
+import { useNavigate } from "react-router-dom";
 
 const PaymentPage = () => {
-  const totalPrice = useSelector(selectTotalPrice); // Tổng tiền từ Redux
-  const cartItems = useSelector(selectCartItems) || []; // Danh sách sản phẩm trong giỏ hàng
-  const { user } = useAuth(); // Thông tin người dùng từ context
+  const totalPrice = useSelector(selectTotalPrice);
+  const cartItems = useSelector(selectCartItems) || [];
+  const { user } = useAuth();
   const [form] = Form.useForm();
-  const [paymentMethod, setPaymentMethod] = useState("vnpay"); // Phương thức thanh toán mặc định
+  const [paymentMethod, setPaymentMethod] = useState("vnpay");
 
-  // Cập nhật thông tin form khi user thay đổi
   useEffect(() => {
     form.setFieldsValue({
       name: user?.name || "",
       phone: user?.phone || "",
       address: user?.address || "",
     });
-    // In dữ liệu để kiểm tra
     console.log("Cart Items in PaymentPage:", cartItems);
     console.log("Total Price in PaymentPage:", totalPrice);
   }, [user, form, cartItems, totalPrice]);
 
-  // Xử lý khi submit form
+  const navigate = useNavigate();
+
   const onFinish = async (values) => {
     try {
       if (cartItems.length === 0) {
@@ -33,38 +33,17 @@ const PaymentPage = () => {
       }
 
       if (paymentMethod === "vnpay") {
-        const paymentData = {
-          amount: totalPrice,
-          name: values.name,
-          phone: values.phone,
-          address: values.address,
-          note: values.note || "",
-          orderDescription: `Thanh toán đơn hàng ${new Date().getTime()}`,
-          orderType: "billpayment",
-          language: "vn",
-          cartItems: cartItems.map((item) => ({
-            productId: item.productId._id,
-            variantId: item.variantId._id,
-            quantity: item.quantity,
-            price: item.variantId.price,
-          })),
-        };
+        const carId = await axiosClient.get("/cart");
+        const response = await axiosClient.post("/payment", {
+          cartId: carId.data._id,
+          totalMoney: totalPrice,
+        });
 
-        const response = await axiosClient.post(
-          "http://localhost:5000/checkout",
-          paymentData
-        );
-
-        if (response.data.vnpUrl) {
-          window.location.href = response.data.vnpUrl;
-        } else {
-          message.error("Lỗi khi tạo URL thanh toán VNPAY!");
-        }
+        window.location.href = response.data.order_url;
       } else if (paymentMethod === "cod") {
         message.success(
           "Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng."
         );
-        // Gửi yêu cầu lưu đơn hàng COD tới backend nếu cần
       }
     } catch (error) {
       console.error("Error during checkout:", error);
@@ -154,7 +133,7 @@ const PaymentPage = () => {
               className="w-full"
             >
               <Radio value="vnpay" className="block mb-2">
-                Thanh toán qua VNPAY
+                Thanh toán qua Zalo Pay
               </Radio>
               <Radio value="cod" className="block">
                 Thanh toán khi nhận hàng (COD)

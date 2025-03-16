@@ -20,7 +20,7 @@ const Header = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // dispatch(fetchCart());
+    dispatch(fetchCart());
   }, [dispatch]);
 
   const handleSearch = async (value) => {
@@ -61,7 +61,7 @@ const Header = () => {
       <div className="py-2 px-4 text-gray-700">Xin chào {user?.name}</div>
       <div
         className="py-2 px-4 text-gray-700 hover:bg-gray-100 cursor-pointer"
-        onClick={() => navigate("/profile")}
+        onClick={() => navigate("auth/profile")}
       >
         Xem Profile
       </div>

@@ -12,6 +12,7 @@ import {
   selectCartError,
   selectTotalPrice,
 } from "../../redux/slice/cartSlice";
+import { useAuth } from "../../context/AuContext";
 
 const CartPage = () => {
   const cartItems = useSelector(selectCartItems);
@@ -56,9 +57,8 @@ const CartPage = () => {
   };
 
   const handleQuantityChange = (variantId, quantity, stock) => {
-    console.log(quantity);
     if (quantity > stock) {
-      message.error("Số lượng vượt quá số lượng tồn kho");
+      window.alert("Số lượng vượt quá số lượng tồn kho");
       return;
     }
     if (quantity === 0) {
@@ -117,7 +117,7 @@ const CartPage = () => {
       render: (text, record) => (
         <InputNumber
           min={0}
-          max={record.variantId.stock}
+          // max={record.variantId.stock}
           value={record.quantity}
           onChange={(value) =>
             handleQuantityChange(

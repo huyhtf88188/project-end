@@ -7,7 +7,7 @@ const cartApi = {
   removeFromCart: (variantId) =>
     axiosClient.delete("/cart/remove", { data: { variantId } }), // Sửa để gửi body trong DELETE
   updateCartItem: (variantId, quantity) =>
-    axiosClient.put("/cart/update", { variantId, quantity }),
+    axiosClient.patch(`/cart/update`, { variantId, quantity }),
   clearCart: () => axiosClient.delete("/cart/clear"), // Thêm hàm clearCart
 };
 
